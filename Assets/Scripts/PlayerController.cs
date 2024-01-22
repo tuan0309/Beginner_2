@@ -3,32 +3,41 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Rigidbody2D), typeof(TouchingDirection))]
 public class PlayerController : MonoBehaviour
 {
     Vector2 moveInput;
     public float walkSpeed = 5f;
     public float runSpeed = 8f;
+    public float airWallSpeed = 5f;
+    public float jumpImpulse = 8f;
     Rigidbody2D rb;
     Animator anim;
+    TouchingDirection touchingDirection;
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        touchingDirection = GetComponent<TouchingDirection>();
     }
 
     private float currentSpeed
     {
         get
         {
-            if (IsMoving)
+            if (IsMoving && !touchingDirection.IsOnWall)
             {
-                if (IsRunning)
+                if (touchingDirection.IsGrounded)
                 {
-                    return runSpeed;
+                    if (IsRunning)
+                    {
+                        return runSpeed;
+                    }
+                    else
+                        return walkSpeed;
                 }
                 else
-                    return walkSpeed;
+                    return airWallSpeed;
             }
             else
                 return 0;
@@ -63,19 +72,10 @@ public class PlayerController : MonoBehaviour
             anim.SetBool(AnimationStrings.isRunning, value);
         }
     }
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
     private void FixedUpdate()
     {
         rb.velocity = new Vector2(moveInput.x * currentSpeed, rb.velocity.y);
+        anim.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
         Face();
     }
     public void Face()
@@ -104,6 +104,15 @@ public class PlayerController : MonoBehaviour
         else if (context.canceled)
         {
             IsRunning = false;
+        }
+    }
+
+    public void OnJump(InputAction.CallbackContext context)
+    {
+        if (context.started && touchingDirection.IsGrounded)
+        {
+            anim.SetTrigger(AnimationStrings.jump);
+            rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
         }
     }
 
