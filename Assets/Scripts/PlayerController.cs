@@ -25,19 +25,24 @@ public class PlayerController : MonoBehaviour
     {
         get
         {
-            if (IsMoving && !touchingDirection.IsOnWall)
+            if (CanMove)
             {
-                if (touchingDirection.IsGrounded)
+                if (IsMoving && !touchingDirection.IsOnWall)
                 {
-                    if (IsRunning)
+                    if (touchingDirection.IsGrounded)
                     {
-                        return runSpeed;
+                        if (IsRunning)
+                        {
+                            return runSpeed;
+                        }
+                        else
+                            return walkSpeed;
                     }
                     else
-                        return walkSpeed;
+                        return airWallSpeed;
                 }
                 else
-                    return airWallSpeed;
+                    return 0;
             }
             else
                 return 0;
@@ -70,6 +75,14 @@ public class PlayerController : MonoBehaviour
         {
             _isRunning = value;
             anim.SetBool(AnimationStrings.isRunning, value);
+        }
+    }
+
+    public bool CanMove
+    {
+        get
+        {
+            return anim.GetBool(AnimationStrings.canMove);
         }
     }
     private void FixedUpdate()
@@ -109,10 +122,17 @@ public class PlayerController : MonoBehaviour
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        if (context.started && touchingDirection.IsGrounded)
+        if (context.started && touchingDirection.IsGrounded && CanMove)
         {
-            anim.SetTrigger(AnimationStrings.jump);
+            anim.SetTrigger(AnimationStrings.jumpTrigger);
             rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+        }
+    }
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            anim.SetTrigger(AnimationStrings.attackTrigger);
         }
     }
 
